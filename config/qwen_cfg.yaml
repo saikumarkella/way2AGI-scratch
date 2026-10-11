@@ -1,0 +1,14 @@
+# Qwen 3 model configurations
+# Total number of parameters = 0.6B
+vocab_size: 151936     # Vocabulary size
+context_length: 40960  # Length originally used during training
+emb_dim: 1024           # Embedding dimension
+n_heads: 16             # Number of attention heads
+n_layers: 28            # Number of layers
+hidden_dim: 3072        # Size of intermediate dim in FeedForward
+head_dim: 128           # Size of the heads in GQA
+qk_norm: true           # Whether to normalize queries & keys in GQA
+n_kv_groups: 8          # Key-Value groups for GQA
+rope_base: 1000000.0  # The base in RoPE's "theta"
+dtype: "bfloat16", 
+  

@@ -1,0 +1,19 @@
+[project]
+name = "building-reasoning-models-from-scratch"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "saikumarkella", email = "kellasaikumar123@gmail.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "torch>=2.13.0",
+]
+
+[project.scripts]
+building-reasoning-models-from-scratch = "building_reasoning_models_from_scratch:main"
+
+[build-system]
+requires = ["uv_build>=0.12.3,<0.13.0"]
+build-backend = "uv_build"
