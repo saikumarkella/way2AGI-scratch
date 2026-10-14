@@ -1,6 +1,11 @@
-# Qwen tokenizer
+# Qwen3 Tokenizer
+# using the Tokenizer from the huggingface library.
+
+
+
+
 import torch
-import tiktoken
+from tokenizers import qwen3tokenizer
 
 class QwenTokenizer:
 
@@ -13,9 +18,3 @@ class QwenTokenizer:
     def decode():
         pass
 
-# tokenizer build
-def sai():
-    print("")    
-
-# defining the tokeni
-import torch
