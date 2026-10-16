@@ -40,9 +40,6 @@ class GroupedQueryAttention(nn.Module):
         else:
             self.q_norm = self.k_norm = None  # No Normalization happens here.
 
-
-        # Getting the RoPE parameters
-        self.cos, self.sin = compute_rope_params(self.head_dim, dtype=dtype)
                 
     def forward(self, x,mask, cos,sin, start_pos = 0, cache =None):
         b, num_tokens, _ = x.shape

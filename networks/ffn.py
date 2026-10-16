@@ -30,5 +30,3 @@ class FeedForwardNetwork(nn.Module):
         x = self.linear3(x)
         return x
     
-       
-
