@@ -40,7 +40,72 @@ class Qwen3ForTextGeneration(nn.Module):
 
         cos, sin = compute_rope_params(head_dim, context_length=config.max_position_embeddings, dtype=config.dtype)
 
-        self.re
+        # registering the cos and sin as buffers
+        self.register_buffer("cos", cos, persistent=False)
+        self.register_buffer("sin", sin, persistent=False)
+
+        self.cfg = config
+        self.current_pos = 0 # Tracking the Current Position in KV Cache.
+
+
+    def forward(self, in_idx, cache = None):
+        '''
+            Step 1: Token Embedding
+            Step 2: Cache
+            Step 3: Transformer block (will do the RoPE. QKNorm)
+            Step 4: Final RMSNorm 
+            Step 5: Linear output layer.
+        '''
+
+        # Step 1 : Embedding the tokens
+        tok_emb = self.token_embedding(in_idx) # shape = (B, num_tokens, token_dim)
+
+        x = tok_emb 
+        # Step 2 : Caching 
+        num_tokens = x.shape[1]
+        if cache is not None:
+            pos_start = self.current_pos
+            pos_end = pos_start + num_tokens
+            self.current_pos = pos_end
+            # will create a mask here
+            mask = torch.triu(
+                torch.ones(pos_end, pos_end, device=x.device, dtype=torch.bool),
+                diagonal=1
+            )[pos_start:pos_end, :pos_end]
+
+        else:
+            pos_start = 0
+            mask = torch.triu(
+                torch.ones(num_tokens, num_tokens, device=x.device, dtype=torch.bool),
+                diagonal=1
+            )
+
+        mask = mask[None, None, :, :] # dimens ==> Preparing for the Multi-head attention computing mask
+
+        # transformer blocks 
+        for i, block in enumerate(self.transformer_blocks):
+            blk_cache =cache.get(i) # getting the cache at the layer wise
+            x, new_blk_cache = block(x,mask, self.cos, self.sin, start_pos = pos_start, cache = blk_cache)
+
+            if cache is not None:
+                cache.update(i, new_blk_cache)
+
+        # Computing the Final Normalization
+        x = self.final_norm(x)
+
+        # Computing the output layer.
+        logits = self.out_head(x.to(self.cfg["dtype"]))
+        return logits
+
+    def reset_kv_cache(self):
+        self.current_pos = 0
+
+
+
+        
+        
+
+
 
 
         
