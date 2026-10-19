@@ -5,8 +5,8 @@
 '''
 import torch
 from torch import nn
-from norms import RMSNorm
-from encodings import apply_rope, compute_rope_params
+from networks.norms import RMSNorm
+from networks.encodings import apply_rope, compute_rope_params
 class GroupedQueryAttention(nn.Module):
 
     def __init__(self, d_in, num_heads, num_kv_groups, head_dim = None, qk_norm = False, dtype=None):
