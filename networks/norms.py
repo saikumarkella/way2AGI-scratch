@@ -25,7 +25,7 @@ class RMSNorm(nn.Module):
         if self.qwen3_compatible:
             x = x.to(torch.float32)
 
-        variance = x.pow(2).means(dim=-1, keepdim = True)
+        variance = x.pow(2).mean(dim=-1, keepdim = True)
         norm_x = x * torch.rsqrt(variance + self.eps)
         norm_x = norm_x * self.scale
 

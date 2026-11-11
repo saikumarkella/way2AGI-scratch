@@ -38,6 +38,11 @@ def apply_rope(x, cos, sin, offset=0):
     x1 = x[..., :d//2] # "first element of every pair"
     x2 = x[..., d//2:] # "second element of every pair"
 
+    # slicing cos/sin to the positions of the current tokens
+    seq_len = x.shape[-2]
+    cos = cos[offset:offset + seq_len].to(x.dtype)
+    sin = sin[offset:offset + seq_len].to(x.dtype)
+
     rotated = torch.cat((-x2, x1), dim=-1)
     return x * cos + rotated * sin
 

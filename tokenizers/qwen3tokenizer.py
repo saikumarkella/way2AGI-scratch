@@ -1,13 +1,15 @@
-# Qwen3 Tokenizer
-# using the Tokenizer from the huggingface library.
-
-
-
-
-import torch
-from tokenizers import qwen3tokenizer
+'''
+    Qwen3 Tokenizer
+    - Uses the HuggingFace Tokenizer library to tokenize text for the Qwen3 model.
+'''
 
 class QwenTokenizer:
+
+    # initializing the special Tokens
+    _SPECIAL = [
+        "<|endoftext|>",
+        
+    ]
 
     def __init__(self):
         pass

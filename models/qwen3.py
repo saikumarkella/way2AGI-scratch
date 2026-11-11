@@ -23,7 +23,7 @@ class Qwen3ForTextGeneration(nn.Module):
 
         # initializing the transformer blocks
         self.transformer_blocks = nn.ModuleList([
-            TransformerBlock(config) for _ in range(config.num_hidden_layers)
+            TransformerBlock(config) for _ in range(config.n_layers)
         ])
 
         # final normalization layer
@@ -32,13 +32,11 @@ class Qwen3ForTextGeneration(nn.Module):
 
         # initializing the utilities like rope parameters and also kv cache
         if config.head_dim is None:
-            assert config.hidden_size % config.num_attention_heads == 0, "hidden size must be divisible by the number of attention heads"
-            config.head_dim = config.hidden_size // config.num_attention_heads
+            assert config.hidden_size % config.n_heads == 0, "hidden size must be divisible by the number of attention heads"
+            config.head_dim = config.hidden_size // config.n_heads
+            
 
-        else:
-            head_dim = config.head_dim
-
-        cos, sin = compute_rope_params(head_dim, context_length=config.max_position_embeddings, dtype=config.dtype)
+        cos, sin = compute_rope_params(config.head_dim, context_length=config.context_length)
 
         # registering the cos and sin as buffers
         self.register_buffer("cos", cos, persistent=False)
@@ -84,7 +82,7 @@ class Qwen3ForTextGeneration(nn.Module):
 
         # transformer blocks 
         for i, block in enumerate(self.transformer_blocks):
-            blk_cache =cache.get(i) # getting the cache at the layer wise
+            blk_cache =cache.get(i) if cache is not None else None # getting the cache at the layer wise
             x, new_blk_cache = block(x,mask, self.cos, self.sin, start_pos = pos_start, cache = blk_cache)
 
             if cache is not None:
@@ -94,16 +92,15 @@ class Qwen3ForTextGeneration(nn.Module):
         x = self.final_norm(x)
 
         # Computing the output layer.
-        logits = self.out_head(x.to(self.cfg["dtype"]))
+        logits = self.out_head(x.to(self.cfg.dtype)) # logits shape = (B, num_tokens, vocab_size)
         return logits
 
-    def reset_kv_cache(self):
+    def reset_kv_cache(self, cache=None):
         self.current_pos = 0
+        if cache is not None:
+            cache.reset()  # clearing the stored keys/values too
 
 
-
-
-        
 
 
 class TransformerBlock(nn.Module):
@@ -118,8 +115,8 @@ class TransformerBlock(nn.Module):
         super().__init__()
         self.attention = GroupedQueryAttention(
             d_in=config.hidden_size,
-            num_heads=config.num_attention_heads,
-            num_kv_groups=config.num_kv_groups,
+            num_heads=config.n_heads,
+            num_kv_groups=config.n_kv_groups,
             head_dim=config.head_dim,
             qk_norm=config.qk_norm,
             dtype=config.dtype
@@ -130,8 +127,8 @@ class TransformerBlock(nn.Module):
 
         # Here feed forward network, the activation is SiLU
         self.feed_forward = FeedForwardNetwork(
-            emd_dim=config.hidden_size,
-            hidden_dim=config.intermediate_size,
+            emb_dim=config.hidden_size,
+            hidden_dim=config.hidden_size,
             dtype=config.dtype
         )
 
@@ -152,4 +149,15 @@ class TransformerBlock(nn.Module):
 
 
 
+# Sanity Checking for the Qwen3 Model.
+if __name__ == "__main__":
+    from utils.config_loader import ConfigLoader
+    config = ConfigLoader("config/qwen_cfg.yaml").load()
+    model = Qwen3ForTextGeneration(config)
 
+    # Sample input
+    input_ids = torch.randint(0, config.vocab_size, (2, 10))  # batch_size=2, seq_length=10
+
+    # Forward pass
+    logits = model(input_ids)
+    print("Logits shape:", logits.shape)  # Expected shape: (2, 10, vocab_size)

@@ -2,7 +2,13 @@
     Loading the configuration from the yaml file
 '''
 import yaml
+import torch
 
+DTYPES = {
+    "float32": torch.float32,
+    "float16": torch.float16,
+    "bfloat16": torch.bfloat16,
+}
 
 class Config:
     """Turns a (possibly nested) dict into an object with attribute access."""
@@ -25,4 +31,5 @@ class ConfigLoader:
     def load(self):
         with open(self.config_path, "r") as f:
             data = yaml.safe_load(f)
+            data["dtype"] = DTYPES[data["dtype"]]
         return Config(data)

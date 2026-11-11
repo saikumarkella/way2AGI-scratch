@@ -3,12 +3,11 @@
 vocab_size: 151936     # Vocabulary size
 context_length: 40960  # Length originally used during training
 emb_dim: 1024           # Embedding dimension
-n_heads: 16             # Number of attention heads
-n_layers: 28            # Number of layers
-hidden_dim: 3072        # Size of intermediate dim in FeedForward
+n_heads: 4             # Number of attention heads = 16 / 4
+n_layers: 2            # Number of layers = 28 / 2
+hidden_size: 3072        # Size of intermediate dim in FeedForward
 head_dim: 128           # Size of the heads in GQA
 qk_norm: true           # Whether to normalize queries & keys in GQA
-n_kv_groups: 8          # Key-Value groups for GQA
+n_kv_groups: 2          # Key-Value groups for GQA = 8
 rope_base: 1000000.0  # The base in RoPE's "theta"
-dtype: "bfloat16", 
-  
+dtype: "bfloat16"

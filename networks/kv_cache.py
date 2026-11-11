@@ -3,7 +3,6 @@
     Here we are designing things in very simple ways
 
 '''
-import torch
 
 class KVCache:
 

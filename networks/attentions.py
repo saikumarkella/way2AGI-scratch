@@ -31,7 +31,7 @@ class GroupedQueryAttention(nn.Module):
         self.W_value = nn.Linear(d_in, num_kv_groups * head_dim, bias=False, dtype = dtype)  # Defining the weighted Value
 
         # output projection
-        self.out_proj = nn.Linear()
+        self.out_proj = nn.Linear(self.d_out, d_in, bias=False, dtype=dtype)
 
         # Normaization
         if qk_norm:
@@ -94,3 +94,29 @@ class GroupedQueryAttention(nn.Module):
 
 
 
+# Sanity check for the Grouped Query Attention
+if __name__ == "__main__":
+    # Define the parameters
+    batch_size = 2
+    num_tokens = 4
+    d_in = 8
+    num_heads = 2
+    num_kv_groups = 1
+    head_dim = 4
+
+    # Create a sample input tensor
+    x = torch.randn(batch_size, num_tokens, d_in)
+    mask = torch.zeros(batch_size, num_heads, num_tokens, num_tokens).bool()  # No masking
+
+    # Compute RoPE parameters
+    cos, sin = compute_rope_params(head_dim, context_length=num_tokens)
+
+    # Create the GroupedQueryAttention module
+    gqa = GroupedQueryAttention(d_in, num_heads, num_kv_groups, head_dim=head_dim)
+
+    # Forward pass through the GroupedQueryAttention
+    output, next_cache = gqa(x, mask, cos, sin)
+
+    # Print the results
+    print("Input shape: ", x.shape)
+    print("Output shape: ", output.shape)
