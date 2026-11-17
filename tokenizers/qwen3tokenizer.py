@@ -14,10 +14,11 @@ class QwenTokenizer:
         "<|im_start|>", "<|im_end|>",
         "<|object_ref_start|>", "<|object_ref_end|>",
         "<|quad_start|>", "<|quad_end|>",
-        "<|vison_start|>", "<|vison_end|>",
+        "<|vision_start|>", "<|vision_end|>",
         "<|vision_pad|>", "<|image_pad|>", "<|video_pad|>"
     ]
-    _SPPLIT_RE = re.compile(r"(<\|[^>]+?\|>)")  # tokenize the sentence based on the special tokens.
+    # split only on the known special tokens (anything else shaped like <|...|> is encoded as normal text)
+    _SPLIT_RE = re.compile("(" + "|".join(re.escape(t) for t in _SPECIAL) + ")")
 
     def __init__(self,
                  tokenizer_file_path = "tokenizer-base.json",
@@ -56,15 +57,15 @@ class QwenTokenizer:
         if chat_wrapped is None:
             chat_wrapped = self.apply_chat_template
 
-        stripped = prompt.strip()
-        if stripped in self._special_to_id and "\n" not in stripped:
-            return [self._special_to_id[stripped]]
+        # a prompt that is exactly one special token maps directly to its id
+        if prompt in self._special_to_id:
+            return [self._special_to_id[prompt]]
 
         if chat_wrapped:
             prompt = self._wrap_chat(prompt)
 
         ids = []
-        for part in filter(None, self._SPPLIT_RE.split(prompt)):
+        for part in filter(None, self._SPLIT_RE.split(prompt)):
             if part in self._special_to_id:
                 ids.append(self._special_to_id[part])
             else:
@@ -75,13 +76,12 @@ class QwenTokenizer:
 
     def _wrap_chat(self, user_msg):
         # we are wrapping the user message with the chat template.
-        s = f"<|im_start|>\n{user_msg}\n<|im_end|>\n"
+        s = f"<|im_start|>user\n{user_msg}<|im_end|>\n"
         if self.add_generation_prompt:
-            s += "<|im_start|>assistant"
-            if self.add_thinking:
-                s += "\n"
-            else:
-                s += "\n<think>\n\n</think>\n\n"
+            s += "<|im_start|>assistant\n"
+            if not self.add_thinking:
+                # thinking disabled -> empty think block, as in the Qwen3 template
+                s += "<think>\n\n</think>\n\n"
         return s
      
 
@@ -91,3 +91,19 @@ class QwenTokenizer:
         return self._tok.decode(token_ids, skip_special_tokens=False)
         
 
+
+# sanity check for the tokenizer
+if __name__ == "__main__":
+    # Initialize the tokenizer
+    tokenizer = QwenTokenizer(tokenizer_file_path="tokenizer-base.json", apply_chat_template=True)
+
+    # Sample prompt
+    prompt = "Hello, how are you?"
+
+    # Encode the prompt
+    encoded_ids = tokenizer.encode(prompt)
+    print("Encoded IDs:", encoded_ids)
+
+    # Decode the token IDs back to string
+    decoded_string = tokenizer.decode(encoded_ids)
+    print("Decoded String:", decoded_string)
